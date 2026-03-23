@@ -3,4 +3,6 @@ omnis/omnis_config.json
 __pycache__/
 *.pyc
 *.log
-storage/run_records/
+storage/run_records/*
+!storage/.gitkeep
+!storage/run_records/.gitkeep

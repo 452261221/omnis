@@ -1,0 +1,41 @@
+{
+  "hard_constraints": [
+    "规则",
+    "必须",
+    "约束",
+    "rule",
+    "must",
+    "always",
+    "should"
+  ],
+  "safety_limits": [
+    "禁止",
+    "不得",
+    "forbid",
+    "ban",
+    "never",
+    "nsfw",
+    "violent",
+    "成人",
+    "越界"
+  ],
+  "style_instructions": [
+    "文风",
+    "语气",
+    "写作",
+    "style",
+    "tone",
+    "narrative",
+    "叙事"
+  ],
+  "world_logic": [
+    "世界",
+    "地点",
+    "阵营",
+    "关系",
+    "设定",
+    "逻辑",
+    "world",
+    "lore"
+  ]
+}

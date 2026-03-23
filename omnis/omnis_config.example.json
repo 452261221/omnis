@@ -1,0 +1,23 @@
+{
+    "tavern_user_dir": "",
+    "tavern_world_file": "",
+    "script_guard_enabled": true,
+    "script_guard_action": "reduce",
+    "max_journal_limit": 10,
+    "interval_sec": 1.0,
+    "rule_template_file": "",
+    "llm_api_base": "",
+    "llm_model": "",
+    "turn_min_interval_sec": 0.9,
+    "active_location_freeze_turns": 4,
+    "location_lexicon": [],
+    "location_lexicon_file": "omnis/location_lexicon.json",
+    "strict_background_independent": true,
+    "wait_for_turn_before_reply": true,
+    "wait_turn_timeout_sec": 8.0,
+    "wait_turn_scope": "related",
+    "auto_wait_scope_downgrade": true,
+    "dynamic_lore_writeback": true,
+    "rumor_default_ttl_ticks": 48,
+    "rumor_ttl_by_llm": true
+}

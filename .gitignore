@@ -1,0 +1,6 @@
+.env
+omnis/omnis_config.json
+__pycache__/
+*.pyc
+*.log
+storage/run_records/

@@ -1,0 +1,6 @@
+# Omnis（万象）Proxy - 必需依赖
+jinja2>=3.0
+
+# 可选依赖 - 向量记忆（NPC 情景记忆增强，不装也能正常运行）
+# chromadb>=0.4
+# onnxruntime>=1.16

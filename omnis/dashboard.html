@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omnis (万象) Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 Google Fonts: Inter 和 Fira Code -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --border-color: #1e293b;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-green: #10b981;
+      --accent-purple: #8b5cf6;
+      --glow-blue: rgba(59, 130, 246, 0.15);
+    }
+    
+    body { 
+      background-color: var(--bg-base); 
+      color: var(--text-main); 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.03), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.04), transparent 25%);
+      background-attachment: fixed;
+    }
+    
+    .font-mono { font-family: 'Fira Code', monospace; }
+    
+    /* 卡片玻璃态与发光效果 */
+    .card { 
+      background-color: var(--bg-card); 
+      border: 1px solid var(--border-color); 
+      border-radius: 0.75rem; 
+      padding: 1.5rem; 
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 智能体卡片特有悬浮效果 */
+    .agent-card-wrap {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .agent-card-wrap:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 0 15px var(--glow-blue);
+      border-color: #334155;
+    }
+
+    /* 科技感发光边框顶部装饰 */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .card:hover::before { opacity: 1; }
+
+    /* 数据框样式 */
+    .data-box {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 0.5rem;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .agent-row { border-bottom: 1px dashed #1e293b; padding-bottom: 0.75rem; margin-bottom: 0.75rem; }
+    .agent-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    
+    /* 显著度进度条 */
+    .salience-bar { 
+      height: 4px; 
+      background-color: #1e293b; 
+      border-radius: 2px; 
+      overflow: hidden; 
+      margin-top: 6px; 
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .salience-fill { 
+      height: 100%; 
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    
+    /* 动画效果 */
+    .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 50% { opacity: .7; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } }
+    
+    /* 滚动条美化 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* 按钮基础样式统一 */
+    .btn-primary {
+      background: linear-gradient(to bottom, #3b82f6, #2563eb);
+      border: 1px solid #1d4ed8;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+    .btn-secondary {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background-color: #2dd4bf10;
+      border-color: #10b981;
+      color: #34d399;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header Area -->
+    <header class="card flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+      <div>
+        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center gap-3 tracking-tight">
+          Omnis Dashboard
+          <span class="text-xs font-medium bg-blue-900/50 text-blue-300 border border-blue-800/50 px-2 py-0.5 rounded-full tracking-normal">Phase 2.0</span>
+        </h1>
+        <p class="text-slate-400 text-sm mt-1.5 flex items-center gap-2 font-medium">
+          <span class="opacity-80">万象世界引擎 · 后台推演监控中枢</span>
+          <span id="possessed-badge" class="hidden bg-purple-900/60 text-purple-200 text-xs px-2 py-0.5 rounded-full border border-purple-700/50 shadow-[0_0_10px_rgba(139,92,246,0.2)]">
+            👁️ 魂穿目标: <span id="possessed-name" class="font-bold"></span>
+          </span>
+        </p>
+      </div>
+      
+      <div class="flex flex-col items-end gap-3 w-full md:w-auto">
+        <div class="flex items-center gap-4 text-sm bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-800 w-full md:w-auto justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500 pulse"></span>
+            <span id="status-text" class="text-slate-300 font-medium tracking-wide">引擎运行中</span>
+          </div>
+          <button onclick="refreshData()" class="text-slate-400 hover:text-white transition p-1 hover:bg-slate-700 rounded" title="强制刷新">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          </button>
+        </div>
+        <div id="turn-progress-wrap" class="hidden w-full bg-slate-900/40 border border-slate-800 rounded-md px-3 py-2">
+          <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+            <span id="turn-progress-text">后台推演中</span>
+            <span id="turn-progress-remaining">剩余 0 角色</span>
+          </div>
+          <div class="w-full h-1.5 rounded bg-slate-800 overflow-hidden">
+            <div id="turn-progress-bar" class="h-full bg-emerald-400 transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-sm w-full md:w-auto justify-end">
+          <span class="text-slate-500 text-xs uppercase tracking-wider">Session</span>
+          <select id="session-selector" onchange="changeSession()" class="bg-[#0f172a] border border-slate-700 rounded-md px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 shadow-inner font-mono text-xs w-64 appearance-none cursor-pointer">
+            <option value="">加载中...</option>
+          </select>
+          <button onclick="clearCurrentSession()" class="text-xs px-3 py-1.5 rounded-md border border-rose-800/50 bg-rose-900/30 text-rose-300 hover:bg-rose-800/50 hover:text-rose-200 transition-colors" title="清空当前会话的所有万象数据（清档）">
+            清空存档
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left Column: World State -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="card h-full">
+          <div class="flex justify-between items-center mb-5 border-b border-slate-800 pb-3">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              全局态势 <span class="text-xs font-normal text-slate-500 tracking-wide uppercase ml-1">World Digest</span>
+            </h2>
+            <div class="flex items-center gap-3">
+              <span id="world-time-badge" class="bg-indigo-900/40 text-indigo-300 text-xs px-2.5 py-1 rounded border border-indigo-800/50 hidden shadow-sm flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span id="world-time-text"></span>
+              </span>
+              <div class="bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-400 shadow-inner flex items-center gap-1">
+                Tick <span id="tick-count" class="text-blue-400 font-mono font-bold text-sm ml-1">0</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 热点摘要 -->
+          <div class="data-box p-4 text-slate-300 min-h-[120px] leading-relaxed text-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.2)] mb-6 relative group" id="digest-box">
+            <div class="absolute -left-0.5 top-4 bottom-4 w-1 bg-blue-500 rounded-r opacity-50"></div>
+            正在加载世界摘要...
+          </div>
+          
+          <!-- 规则与流言并排 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+            <div class="flex flex-col h-full">
+              <h3 class="text-xs font-semibold mb-2 text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                世界书规则摘要
+              </h3>
+              <div class="data-box p-3 text-xs text-slate-400 flex-1 overflow-y-auto max-h-[120px] font-mono leading-relaxed" id="rules-box">
+                暂无规则
+              </div>
+            </div>
+            <div class="flex flex-col h-full">
+              <h3 class="text-xs font-semibold mb-2 text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                  坊间流言
+                </div>
+                <span class="text-[10px] text-slate-500 font-normal normal-case bg-slate-800 px-1.5 rounded">NPC对话泄露源</span>
+              </h3>
+              <div class="flex items-center gap-2 mb-2">
+                <input type="number" id="rumor-ttl-quick" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 w-24" min="1" step="1" placeholder="时长">
+                <select id="rumor-ttl-quick-unit" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-300">
+                  <option value="tick">Tick</option>
+                  <option value="day">天</option>
+                </select>
+                <label class="inline-flex items-center gap-1 text-xs text-slate-400">
+                  <input type="checkbox" id="rumor-ttl-mode-quick">
+                  模型判断时长
+                </label>
+                <button id="rumor-ttl-save-btn" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 rounded border border-slate-700">保存</button>
+              </div>
+              <div class="data-box p-3 text-xs text-slate-300 flex-1 overflow-y-auto max-h-[120px] space-y-2" id="rumors-box">
+                <div class="text-slate-600 italic text-center mt-4">天下太平，暂无流言</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 关系与物品并排 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="flex flex-col">
+              <h3 class="text-xs font-semibold mb-2 text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                动态社交变动
+              </h3>
+              <div class="data-box p-3 overflow-y-auto h-[140px] scroll-smooth" id="relationships-box">
+                <div class="text-slate-600 text-xs text-center mt-10 italic">暂无显著关系变动</div>
+              </div>
+            </div>
+
+            <div class="flex flex-col">
+              <h3 class="text-xs font-semibold mb-2 text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                物品流转追踪
+              </h3>
+              <div class="data-box p-3 overflow-y-auto h-[140px] scroll-smooth" id="items-box">
+                <div class="text-slate-600 text-xs text-center mt-10 italic">暂无物品流转记录</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Column: System & Config -->
+      <div class="space-y-6">
+        <div class="card">
+          <div class="flex justify-between items-center mb-5 border-b border-slate-800 pb-3">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+              系统核心 <span class="text-xs font-normal text-slate-500 tracking-wide uppercase ml-1">Metrics</span>
+            </h2>
+            <button onclick="toggleCoreMetrics()" id="core-metrics-toggle" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-600 text-slate-300 px-2 py-1 rounded transition">展开</button>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="data-box p-3 flex flex-col items-center justify-center text-center">
+              <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">活跃实体</div>
+              <div class="text-3xl font-mono font-bold text-blue-400 shadow-blue-500/20 drop-shadow-md" id="agent-count">0</div>
+            </div>
+            <div class="data-box p-3 flex flex-col items-center justify-center text-center">
+              <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">会话缓存</div>
+              <div class="text-3xl font-mono font-bold text-emerald-400 shadow-emerald-500/20 drop-shadow-md" id="cache-size">0</div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+              <span class="text-xs text-slate-400">推理引擎</span>
+              <span class="text-xs font-mono text-emerald-400 max-w-[120px] truncate" id="llm-model" title="未配置">-</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+              <span class="text-xs text-slate-400">规则注入等级</span>
+              <span class="text-xs font-mono text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-800/50" id="inject-level">full</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+              <span class="text-xs text-slate-400">脚本防护(Guard)</span>
+              <span id="script-guard" class="text-[10px] text-amber-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Enabled</span>
+            </div>
+            <div id="core-metrics-body" class="hidden space-y-3">
+              <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+                <span class="text-xs text-slate-400">回合最小间隔</span>
+                <span id="tuning-turn-interval" class="text-xs font-mono text-cyan-300">0.5s</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+                <span class="text-xs text-slate-400">地点冻结回合</span>
+                <span id="tuning-freeze-turns" class="text-xs font-mono text-cyan-300">2</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+                <span class="text-xs text-slate-400">地点词典数</span>
+                <span id="tuning-lexicon-count" class="text-xs font-mono text-cyan-300">0</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+                <span class="text-xs text-slate-400">审计总量</span>
+                <span id="audit-total" class="text-xs font-mono text-amber-300">0</span>
+              </div>
+              <div class="flex justify-between items-center bg-slate-900/50 p-2.5 rounded border border-slate-800/50">
+                <span class="text-xs text-slate-400">近期审计失败</span>
+                <span id="audit-failures" class="text-xs font-mono text-rose-300">0</span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="openConfigModal()" class="w-full mt-5 btn-secondary text-sm py-2.5 rounded-md flex justify-center items-center gap-2 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            LLM 模型与系统设置
+          </button>
+        </div>
+
+        <div class="card relative overflow-hidden border-indigo-900/30">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-900/10 to-transparent pointer-events-none"></div>
+          <div class="relative z-10">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+              实体强行补录 <span class="text-[10px] text-slate-500 font-normal ml-1">解决正则提取遗漏</span>
+            </h3>
+            <div class="space-y-3">
+              <div class="flex gap-2">
+                <select id="entity-type-select" class="bg-slate-900 border border-slate-700 text-sm rounded-md px-2 py-2 outline-none focus:border-indigo-500 text-slate-300 w-24">
+                  <option value="location">📍 地点</option>
+                  <option value="character">👤 人物</option>
+                </select>
+                <input type="text" id="entity-name-input" placeholder="输入实体名称..." class="flex-1 bg-slate-900 border border-slate-700 text-sm rounded-md px-3 py-2 outline-none focus:border-indigo-500 text-white placeholder-slate-600">
+              </div>
+              <div class="flex gap-2">
+                <button onclick="forceExtractEntity()" class="flex-1 bg-indigo-900/50 hover:bg-indigo-800 border border-indigo-700/50 text-indigo-200 text-sm py-2 rounded-md transition shadow-sm">
+                  执行补录 (Inject)
+                </button>
+                <button onclick="renameEntity()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 text-sm py-2 rounded-md transition shadow-sm" title="将已有的称呼(如'同事')重命名为真实名字">
+                  重命名角色
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-cyan-900/40">
+          <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6M4 19h16" /></svg>
+              状态提取调试 <span class="text-[10px] text-slate-500 font-normal ml-1">Active Extract Report</span>
+            </span>
+            <span class="flex items-center gap-2">
+              <button onclick="toggleDebugPanel()" id="debug-panel-toggle" class="text-[11px] bg-slate-900 hover:bg-slate-800 border border-slate-600 text-slate-300 px-2 py-1 rounded transition">
+                展开
+              </button>
+              <select id="debug-export-limit" class="text-[11px] bg-slate-900 border border-slate-600 text-cyan-200 px-1.5 py-1 rounded">
+                <option value="5">近5轮</option>
+                <option value="10" selected>近10轮</option>
+                <option value="20">近20轮</option>
+                <option value="30">近30轮</option>
+              </select>
+              <button onclick="exportAuditEvents()" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-200 px-2 py-1 rounded transition">
+                导出审计
+              </button>
+              <button onclick="exportDebugBundle()" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-200 px-2 py-1 rounded transition">
+                导出排障包
+              </button>
+            </span>
+          </h3>
+          <div id="debug-panel-body" class="space-y-2 text-xs hidden">
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">输入角色</div>
+              <div id="dbg-active-input" class="text-cyan-300 font-mono break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">解析角色</div>
+              <div id="dbg-active-resolved" class="text-cyan-300 font-mono break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">来源映射</div>
+              <div id="dbg-active-source" class="text-emerald-300 font-mono whitespace-pre-wrap break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">决策原因</div>
+              <div id="dbg-decision-reason" class="text-violet-300 font-mono break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">最终覆盖来源</div>
+              <div id="dbg-override-source" class="text-fuchsia-300 font-mono break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">触发条件</div>
+              <div id="dbg-need-llm-reasons" class="text-amber-300 font-mono whitespace-pre-wrap break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">状态变更差异</div>
+              <div id="dbg-state-diff" class="text-orange-300 font-mono whitespace-pre-wrap break-all">-</div>
+            </div>
+            <div class="flex justify-between bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <span class="text-slate-500">队列长度</span>
+              <span id="dbg-queue-size" class="text-amber-300 font-mono">0</span>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">冻结剩余回合</div>
+              <div id="dbg-freeze-remaining" class="text-sky-300 font-mono whitespace-pre-wrap break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">入队状态</div>
+              <div id="dbg-enqueue-status" class="text-lime-300 font-mono break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">最近5轮提取日志</div>
+              <div id="dbg-recent-extract-logs" class="text-teal-300 font-mono whitespace-pre-wrap break-all max-h-40 overflow-y-auto">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">最近注入内容</div>
+              <div id="dbg-recent-injections" class="text-cyan-300 font-mono whitespace-pre-wrap break-all max-h-52 overflow-y-auto">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">推演性能指标</div>
+              <div id="dbg-turn-perf" class="text-lime-300 font-mono whitespace-pre-wrap break-all">-</div>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+              <div class="text-slate-500 mb-1">最近DM裁定复盘</div>
+              <div id="dbg-recent-dm" class="text-amber-300 font-mono whitespace-pre-wrap break-all max-h-56 overflow-y-auto">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agents Grid -->
+    <div class="card border-t-4 border-t-blue-500/50 mt-6">
+      <div class="flex justify-between items-end mb-6 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            自治智能体矩阵
+          </h2>
+          <p class="text-xs text-slate-500 mt-1 ml-8">Active Agents Matrix · 按显著度权重降序排列</p>
+        </div>
+      </div>
+      <div id="agents-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
+        <div class="text-slate-500 italic text-sm p-4 text-center col-span-full">正在连接感知网络，拉取实体数据...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框部分基本保持原样，只做色彩微调 -->
+  <!-- LLM 配置弹窗 -->
+  <div id="config-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity">
+    <div class="card w-full max-w-lg max-h-[88vh] shadow-2xl border-slate-600 transform scale-100 transition-transform flex flex-col">
+      <h2 class="text-xl font-bold mb-6 text-white flex items-center gap-2 border-b border-slate-700 pb-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        后台推理核心设置
+      </h2>
+      <div class="space-y-4 overflow-y-auto pr-1">
+        <div class="text-[11px] text-slate-500 uppercase tracking-wide border-b border-slate-800 pb-2">LLM设置</div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">API Base URL <span class="text-slate-500 font-normal normal-case">(兼容 OpenAI 格式的接口地址)</span></label>
+          <input type="text" id="api-base" placeholder="http://127.0.0.1:11434/v1" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">API Key <span class="text-slate-500 font-normal normal-case">(仅运行时生效，重启后需重新设置或通过 OMNIS_LLM_API_KEY 环境变量注入)</span></label>
+          <input type="password" id="api-key" placeholder="sk-..." class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Admin Token <span class="text-slate-500 font-normal normal-case">(仅本地缓存，不写服务器)</span></label>
+          <input type="password" id="admin-token" placeholder="可选：用于调用 /admin 接口" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Model Name <span class="text-slate-500 font-normal normal-case">(模型名称，需与启动的模型一致)</span></label>
+          <input type="text" id="model-name" placeholder="qwen2.5:7b" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200">
+        </div>
+        <div id="llm-current-config" class="text-xs text-slate-500 bg-slate-900/50 border border-slate-800 rounded px-3 py-2"></div>
+        <div class="flex gap-3">
+          <button onclick="testLLMConnection()" id="btn-test-llm" class="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 rounded-md transition flex items-center gap-2">
+            <span>🔌 连通性测试</span>
+          </button>
+          <button onclick="saveLLMConfig()" class="btn-primary px-4 py-2 text-sm text-white rounded-md transition font-medium">保存LLM设置</button>
+        </div>
+        <div class="text-[11px] text-slate-500 uppercase tracking-wide border-b border-slate-800 pb-2 pt-2">运行设置</div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">最大工作记忆条数 <span class="text-slate-500 font-normal normal-case">(控制Token消耗与记忆衰减)</span></label>
+          <input type="number" id="max-journal-limit" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="默认：3" min="1" max="20">
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-md border border-slate-700">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300">世界书动态生长回写</label>
+            <p class="text-xs text-slate-500 mt-0.5">开启后，后台新生成的设定和地点将直接保存到酒馆的设定文件中。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="dynamic-lore-writeback" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-md border border-slate-700">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300">严格独立模式</label>
+            <p class="text-xs text-slate-500 mt-0.5">开启后，背景角色默认处理各自事务，只有文本明确同场才产生强关联。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="strict-background-independent" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-md border border-slate-700">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300">回包前等待后台推演</label>
+            <p class="text-xs text-slate-500 mt-0.5">开启后，酒馆会等待后台回合完成再返回，减少“前台先说、后台后补”的割裂。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="wait-for-turn-before-reply" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">等待超时(秒) <span class="text-slate-500 font-normal normal-case">(建议 3~8 秒)</span></label>
+          <input type="number" step="0.5" id="wait-turn-timeout-sec" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="默认：8" min="0" max="60">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">等待范围</label>
+          <select id="wait-turn-scope" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200">
+            <option value="related">当前对话关联角色等待</option>
+            <option value="all">全角色等待</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">流言默认维持时长 <span class="text-slate-500 font-normal normal-case">(Tick:6~240 / 天:1~10)</span></label>
+          <div class="grid grid-cols-[1fr_96px] gap-2">
+            <input type="number" id="rumor-default-ttl-value" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="默认：48" min="1" step="1">
+            <select id="rumor-default-ttl-unit" class="bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200">
+              <option value="tick">Tick</option>
+              <option value="day">天</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-md border border-slate-700">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300">模型判断流言维持时间</label>
+            <p class="text-xs text-slate-500 mt-0.5">开启后，DM 会在 rumors_spread 中给出持续天数，系统据此设置过期时间。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="rumor-ttl-by-llm" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
+        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-md border border-slate-700">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300">自动降级策略</label>
+            <p class="text-xs text-slate-500 mt-0.5">检测排队或超时时，从“全角色等待”自动降级为“关联角色等待”。</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="auto-wait-scope-downgrade" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">酒馆用户目录</label>
+          <input type="text" id="tavern-user-dir" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="留空则自动探测 项目/酒馆/data/default-user">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">世界书文件路径</label>
+          <input type="text" id="tavern-world-file" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="留空则自动从 worlds 目录选择">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">回合最小间隔(秒) <span class="text-slate-500 font-normal normal-case">(节流防抖)</span></label>
+          <input type="number" step="0.1" id="turn-min-interval-sec" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="默认：0.5" min="0" max="10">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">地点冻结回合数 <span class="text-slate-500 font-normal normal-case">(防止地点抖动)</span></label>
+          <input type="number" id="active-location-freeze-turns" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="默认：2" min="0" max="10">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">地点词典 <span class="text-slate-500 font-normal normal-case">(逗号分隔)</span></label>
+          <input type="text" id="location-lexicon" class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-200" placeholder="玄关,楼道,书房,天台">
+        </div>
+      </div>
+      <div class="flex justify-end items-center mt-4 pt-3 border-t border-slate-800 gap-3 sticky bottom-0 bg-slate-900">
+        <button onclick="closeConfigModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-white transition">取消</button>
+        <button onclick="saveRuntimeConfig()" class="btn-primary px-5 py-2 text-sm text-white rounded-md transition font-medium">保存运行设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 角色详情 Modal -->
+  <div id="char-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-50 transition-opacity">
+    <div class="bg-slate-900 rounded-xl p-0 w-full max-w-5xl max-h-[85vh] flex flex-col border border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+      <!-- 弹窗 Header -->
+      <div class="flex justify-between items-center px-6 py-4 border-b border-slate-800 bg-slate-800/50">
+        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+          <span class="bg-blue-600 w-2 h-6 rounded-full inline-block"></span>
+          <span id="char-modal-name">角色名</span>
+          <span id="char-modal-status" class="text-xs px-2.5 py-1 rounded-full border"></span>
+        </h2>
+        <div class="flex gap-3 items-center">
+          <button onclick="clearCharData()" class="text-rose-400 hover:text-rose-300 hover:bg-rose-900/30 px-3 py-1.5 rounded text-sm transition flex items-center gap-1 border border-transparent hover:border-rose-800/50" title="清空该角色的所有日志和记录">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            清空角色
+          </button>
+          <button onclick="triggerFlashback()" id="btn-flashback" class="text-purple-400 hover:text-purple-300 hover:bg-purple-900/30 px-3 py-1.5 rounded text-sm transition flex items-center gap-1 border border-transparent hover:border-purple-800/50" title="生成角色的近期记忆总结，并注入到下次对话中">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            记忆闪回
+          </button>
+          <button onclick="exportCharJournal()" class="text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 px-3 py-1.5 rounded text-sm transition flex items-center gap-1 border border-transparent hover:border-blue-800/50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            导出完整档案
+          </button>
+          <div class="w-px h-6 bg-slate-700 mx-1"></div>
+          <button onclick="closeCharModal()" class="text-slate-400 hover:text-white transition p-1 hover:bg-slate-700 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 弹窗 Body -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden flex-1 bg-slate-900/80">
+        <!-- 左侧：记忆长廊与简介 -->
+        <div class="col-span-2 flex flex-col overflow-hidden border-r border-slate-800">
+          <!-- 简介区域 -->
+          <div class="px-6 py-4 border-b border-slate-800 bg-slate-800/20">
+            <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider flex items-center gap-2">
+              <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              人物简介 (Summary)
+            </div>
+            <p id="char-modal-summary" class="text-sm text-slate-300 leading-relaxed min-h-[40px]"></p>
+          </div>
+          <div class="px-6 py-3 bg-slate-800/30 border-b border-slate-800 flex items-center gap-2 text-slate-300 font-semibold text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            记忆长廊 (Journal)
+          </div>
+          <div id="char-modal-journal" class="p-6 overflow-y-auto flex-1 text-sm text-slate-300 space-y-4 font-mono leading-relaxed custom-scrollbar bg-black/20">
+          </div>
+        </div>
+        
+        <!-- 右侧：物品与关系 -->
+        <div class="col-span-1 flex flex-col overflow-hidden">
+          <div class="flex-1 flex flex-col overflow-hidden border-b border-slate-800">
+            <div class="px-5 py-3 bg-slate-800/30 border-b border-slate-800 flex items-center gap-2 text-slate-300 font-semibold text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              随身行囊 (Inventory)
+            </div>
+            <div id="char-modal-items" class="p-5 overflow-y-auto flex-1 text-sm bg-black/10">
+            </div>
+          </div>
+          
+          <div class="flex-[1.5] flex flex-col overflow-hidden">
+            <div class="px-5 py-3 bg-slate-800/30 border-b border-slate-800 flex items-center gap-2 text-slate-300 font-semibold text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+              社交图谱 (Social Graph)
+            </div>
+            <div id="char-modal-rels" class="p-5 overflow-y-auto flex-1 text-sm space-y-2.5 bg-black/10">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-stack" class="fixed top-5 right-5 z-[70] flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    let currentConfig = { base: '', key: '', key_masked: '', admin_token: '', model: '', max_journal_limit: 3, dynamic_lore_writeback: false, turn_min_interval_sec: 0.5, active_location_freeze_turns: 2, location_lexicon: [], strict_background_independent: true, wait_for_turn_before_reply: false, wait_turn_timeout_sec: 8, wait_turn_scope: 'related', auto_wait_scope_downgrade: true, rumor_default_ttl_ticks: 48, rumor_ttl_by_llm: true, tavern_user_dir: '', tavern_world_file: '' };
+    let selectedSession = '';
+    let globalAgentsData = [];
+    let currentViewingChar = '';
+    let healthEtagBySession = {};
+
+    function notify(message, type = 'info') {
+      const stack = document.getElementById('toast-stack');
+      if (!stack) return;
+      const el = document.createElement('div');
+      const color = type === 'success' ? 'border-emerald-600 text-emerald-200' : type === 'error' ? 'border-rose-700 text-rose-200' : 'border-slate-600 text-slate-200';
+      el.className = `pointer-events-auto max-w-md bg-slate-900/95 border ${color} rounded px-3 py-2 text-xs shadow-lg`;
+      el.textContent = message;
+      stack.appendChild(el);
+      setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 2600);
+    }
+
+    function toggleDebugPanel() {
+      const body = document.getElementById('debug-panel-body');
+      const btn = document.getElementById('debug-panel-toggle');
+      if (!body || !btn) return;
+      const hidden = body.classList.contains('hidden');
+      if (hidden) {
+        body.classList.remove('hidden');
+        btn.textContent = '收起';
+      } else {
+        body.classList.add('hidden');
+        btn.textContent = '展开';
+      }
+    }
+
+    function toggleCoreMetrics() {
+      const body = document.getElementById('core-metrics-body');
+      const btn = document.getElementById('core-metrics-toggle');
+      if (!body || !btn) return;
+      const hidden = body.classList.contains('hidden');
+      if (hidden) {
+        body.classList.remove('hidden');
+        btn.textContent = '收起';
+      } else {
+        body.classList.add('hidden');
+        btn.textContent = '展开';
+      }
+    }
+
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function openConfigModal() {
+      document.getElementById('api-base').value = currentConfig.base || '';
+      document.getElementById('api-key').value = '';
+      document.getElementById('api-key').placeholder = currentConfig.key_masked ? `${currentConfig.key_masked}（留空则保持不变）` : 'sk-...';
+      document.getElementById('admin-token').value = currentConfig.admin_token || '';
+      document.getElementById('model-name').value = currentConfig.model || '';
+      document.getElementById('max-journal-limit').value = currentConfig.max_journal_limit || 3;
+      document.getElementById('dynamic-lore-writeback').checked = currentConfig.dynamic_lore_writeback || false;
+      document.getElementById('turn-min-interval-sec').value = currentConfig.turn_min_interval_sec ?? 0.5;
+      document.getElementById('active-location-freeze-turns').value = currentConfig.active_location_freeze_turns ?? 2;
+      document.getElementById('location-lexicon').value = (currentConfig.location_lexicon || []).join(',');
+      document.getElementById('strict-background-independent').checked = currentConfig.strict_background_independent !== false;
+      document.getElementById('wait-for-turn-before-reply').checked = !!currentConfig.wait_for_turn_before_reply;
+      document.getElementById('wait-turn-timeout-sec').value = currentConfig.wait_turn_timeout_sec ?? 8;
+      document.getElementById('wait-turn-scope').value = currentConfig.wait_turn_scope || 'related';
+      document.getElementById('auto-wait-scope-downgrade').checked = currentConfig.auto_wait_scope_downgrade !== false;
+      const cfgRumorUnitEl = document.getElementById('rumor-default-ttl-unit');
+      const cfgRumorValueEl = document.getElementById('rumor-default-ttl-value');
+      const cfgRumorUnit = (cfgRumorUnitEl && cfgRumorUnitEl.value) ? cfgRumorUnitEl.value : 'tick';
+      const cfgTicks = currentConfig.rumor_default_ttl_ticks || 48;
+      if (cfgRumorValueEl) cfgRumorValueEl.value = cfgRumorUnit === 'day' ? Math.max(1, Math.round((cfgTicks / 24) * 10) / 10) : cfgTicks;
+      document.getElementById('rumor-ttl-by-llm').checked = currentConfig.rumor_ttl_by_llm !== false;
+      document.getElementById('tavern-user-dir').value = currentConfig.tavern_user_dir || '';
+      document.getElementById('tavern-world-file').value = currentConfig.tavern_world_file || '';
+      updateLLMConfigSummary();
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('config-modal').classList.add('hidden');
+    }
+
+    function withAdminToken(headers = {}) {
+      const out = { ...headers };
+      const token = (currentConfig.admin_token || localStorage.getItem('omnis_admin_token') || '').trim();
+      if (token) out['X-Omnis-Admin-Token'] = token;
+      return out;
+    }
+
+    function rumorTicksFromInput(value, unit) {
+      const raw = Number(value);
+      if (!Number.isFinite(raw) || raw <= 0) return 48;
+      if (String(unit) === 'day') {
+        return Math.max(6, Math.min(240, Math.round(raw * 24)));
+      }
+      return Math.max(6, Math.min(240, Math.round(raw)));
+    }
+
+    function updateLLMConfigSummary() {
+      const el = document.getElementById('llm-current-config');
+      if (!el) return;
+      const base = (currentConfig.base || '').trim();
+      const model = (currentConfig.model || '').trim();
+      const keyMasked = (currentConfig.key_masked || '').trim();
+      el.textContent = `已配置 API: ${base || '未设置'} | Model: ${model || '未设置'} | Key: ${keyMasked || '未设置'}`;
+    }
+
+    async function testLLMConnection() {
+      const btn = document.getElementById('btn-test-llm');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> 测试中...';
+      btn.disabled = true;
+
+      const payload = {
+        api_base: document.getElementById('api-base').value.trim() || (currentConfig.base || ''),
+        api_key: document.getElementById('api-key').value.trim(),
+        model: document.getElementById('model-name').value.trim() || (currentConfig.model || '')
+      };
+
+      try {
+        const res = await fetch('/admin/test_llm', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify('测试通过: ' + data.message, 'success');
+        } else {
+          notify('测试失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求异常，请检查网络或控制台。', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function changeSession() {
+      const sel = document.getElementById('session-selector');
+      selectedSession = sel.value;
+      refreshData();
+    }
+
+    async function clearCurrentSession() {
+      if (!selectedSession) {
+        notify('请先选择一个存档 Session', 'error');
+        return;
+      }
+      if (!confirm(`确定要清空会话 [${selectedSession}] 的所有万象数据吗？\n\n此操作将删除该会话的所有角色日志、状态快照等数据，相当于清档，不可撤销！`)) {
+        return;
+      }
+      try {
+        const res = await fetch('/admin/clear_session', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ session_id: selectedSession })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(`会话 [${selectedSession}] 已清空，共清除 ${data.agents_cleared} 个角色`, 'success');
+          refreshData();
+        } else {
+          notify('清空失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求异常: ' + e.message, 'error');
+      }
+    }
+
+    async function clearCharData() {
+      if (!selectedSession || !currentViewingChar) return;
+      if (!confirm(`确定要清空角色 [${currentViewingChar}] 的所有日志和记录吗？\n\n此操作不可撤销！`)) {
+        return;
+      }
+      try {
+        const res = await fetch('/admin/clear_agent', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            char_name: currentViewingChar
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(`角色 [${currentViewingChar}] 日志已清空，共清除 ${data.journal_cleared} 条记录`, 'success');
+          refreshData();
+        } else {
+          notify('清空失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求异常: ' + e.message, 'error');
+      }
+    }
+
+    async function saveLLMConfig() {
+      const payload = {
+        api_base: document.getElementById('api-base').value.trim() || (currentConfig.base || ''),
+        api_key: document.getElementById('api-key').value.trim(),
+        model: document.getElementById('model-name').value.trim() || (currentConfig.model || '')
+      };
+      const adminToken = document.getElementById('admin-token').value.trim();
+      currentConfig.admin_token = adminToken;
+      if (adminToken) localStorage.setItem('omnis_admin_token', adminToken);
+      else localStorage.removeItem('omnis_admin_token');
+      
+      try {
+        const res = await fetch('/admin/update_llm', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          notify('LLM 设置已保存', 'success');
+          refreshData();
+        } else {
+          const err = await res.json();
+          notify('保存失败: ' + (err.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求失败', 'error');
+      }
+    }
+
+    async function saveRuntimeConfig() {
+      const payload = {
+        max_journal_limit: parseInt(document.getElementById('max-journal-limit').value) || 3,
+        dynamic_lore_writeback: document.getElementById('dynamic-lore-writeback').checked,
+        turn_min_interval_sec: parseFloat(document.getElementById('turn-min-interval-sec').value) || 0.5,
+        active_location_freeze_turns: parseInt(document.getElementById('active-location-freeze-turns').value) || 2,
+        location_lexicon: document.getElementById('location-lexicon').value.trim(),
+        strict_background_independent: document.getElementById('strict-background-independent').checked,
+        wait_for_turn_before_reply: document.getElementById('wait-for-turn-before-reply').checked,
+        wait_turn_timeout_sec: parseFloat(document.getElementById('wait-turn-timeout-sec').value) || 8,
+        wait_turn_scope: document.getElementById('wait-turn-scope').value || 'related',
+        auto_wait_scope_downgrade: document.getElementById('auto-wait-scope-downgrade').checked,
+        rumor_default_ttl_ticks: rumorTicksFromInput(
+          document.getElementById('rumor-default-ttl-value').value,
+          document.getElementById('rumor-default-ttl-unit').value
+        ),
+        rumor_ttl_by_llm: document.getElementById('rumor-ttl-by-llm').checked,
+        tavern_user_dir: document.getElementById('tavern-user-dir').value.trim(),
+        tavern_world_file: document.getElementById('tavern-world-file').value.trim()
+      };
+      const adminToken = document.getElementById('admin-token').value.trim();
+      currentConfig.admin_token = adminToken;
+      if (adminToken) localStorage.setItem('omnis_admin_token', adminToken);
+      else localStorage.removeItem('omnis_admin_token');
+      
+      try {
+        const res = await fetch('/admin/update_runtime_tuning', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          notify('运行设置已保存', 'success');
+          refreshData();
+        } else {
+          const err = await res.json();
+          notify('保存失败: ' + (err.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求失败', 'error');
+      }
+    }
+
+    async function saveRumorSettingsQuick() {
+      const payload = {
+        rumor_default_ttl_ticks: rumorTicksFromInput(
+          document.getElementById('rumor-ttl-quick').value,
+          document.getElementById('rumor-ttl-quick-unit').value
+        ),
+        rumor_ttl_by_llm: document.getElementById('rumor-ttl-mode-quick').checked
+      };
+      try {
+        const res = await fetch('/admin/update_runtime_tuning', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify('流言设置已保存', 'success');
+          refreshData();
+        } else {
+          notify('保存失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求失败', 'error');
+      }
+    }
+
+    async function possessCharacter(charName) {
+      if (!selectedSession) {
+        notify("请先选择一个存档 Session", 'error');
+        return;
+      }
+      try {
+        const res = await fetch('/admin/possess', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            target_char: charName,
+            original_user: "User"
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(`已成功魂穿至【${charName}】`, 'success');
+          refreshData();
+        } else {
+          notify(`魂穿失败: ${data.error}`, 'error');
+        }
+      } catch (e) {
+        notify("请求失败", 'error');
+      }
+    }
+
+    async function forceExtractEntity() {
+      if (!selectedSession) {
+        notify("请先选择一个存档 Session", 'error');
+        return;
+      }
+      const typeSel = document.getElementById('entity-type-select').value;
+      const nameInput = document.getElementById('entity-name-input').value.trim();
+      
+      if (!nameInput) {
+        notify("实体名称不能为空", 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/admin/force_extract_entity`, {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            entity_type: typeSel,
+            entity_name: nameInput
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(data.msg || "添加成功", 'success');
+          document.getElementById('entity-name-input').value = '';
+          refreshData();
+        } else {
+          notify("添加失败: " + (data.msg || "未知错误"), 'error');
+        }
+      } catch (e) {
+        notify('请求失败: ' + e.message, 'error');
+      }
+    }
+
+    async function renameEntity() {
+      if (!selectedSession) {
+        notify("请先选择一个存档 Session", 'error');
+        return;
+      }
+      
+      const typeSel = document.getElementById('entity-type-select').value;
+      if (typeSel !== 'character') {
+        notify("目前仅支持重命名人物角色。", 'error');
+        return;
+      }
+      
+      const newName = document.getElementById('entity-name-input').value.trim();
+      if (!newName) {
+        notify("请在输入框中填写新的名字。", 'error');
+        return;
+      }
+      
+      const oldName = prompt(`请输入你要重命名的旧角色名（比如 "法院同事"），将把它重命名为 "${newName}"：`);
+      if (!oldName || !oldName.trim()) return;
+
+      try {
+        const res = await fetch(`/admin/rename_entity`, {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            old_name: oldName.trim(),
+            new_name: newName
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(data.msg || "重命名成功", 'success');
+          document.getElementById('entity-name-input').value = '';
+          refreshData();
+        } else {
+          notify("重命名失败: " + (data.msg || data.error || "未知错误"), 'error');
+        }
+      } catch (e) {
+        notify('请求失败: ' + e.message, 'error');
+      }
+    }
+
+    async function triggerFlashback() {
+      if (!selectedSession || !currentViewingChar) {
+        notify('请先选择会话并打开角色详情', 'error');
+        return;
+      }
+      const btn = document.getElementById('btn-flashback');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></span> 闪回中...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/admin/flashback', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            char_name: currentViewingChar
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify('记忆闪回生成成功', 'success');
+        } else {
+          notify('闪回失败: ' + (data.error || '未知错误'), 'error');
+        }
+      } catch (e) {
+        notify('请求异常', 'error');
+      } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    async function toggleAgentAI(charName, enabled) {
+      if (!selectedSession) return;
+      try {
+        const res = await fetch(`/admin/toggle_agent_ai`, {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            char_name: charName,
+            enabled: enabled
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          notify(`已${enabled ? '启用' : '关闭'}角色 ${charName} 的 AI 智能体`, 'success');
+          refreshData();
+        } else {
+          notify('切换失败: ' + data.error, 'error');
+        }
+      } catch (e) {
+        notify('请求失败: ' + e.message, 'error');
+      }
+    }
+
+    async function refreshData() {
+      try {
+        let url = '/health';
+        if (selectedSession) {
+          url += `?session_id=${encodeURIComponent(selectedSession)}`;
+        }
+        const etagKey = selectedSession || '__default__';
+        const reqHeaders = withAdminToken({});
+        if (healthEtagBySession[etagKey]) {
+          reqHeaders['If-None-Match'] = healthEtagBySession[etagKey];
+        }
+        const res = await fetch(url, { headers: reqHeaders });
+        if (res.status === 304) {
+          return;
+        }
+        if (!res.ok) throw new Error('网络请求失败');
+        const latestEtag = res.headers.get('ETag');
+        if (latestEtag) {
+          healthEtagBySession[etagKey] = latestEtag;
+        }
+        const data = await res.json();
+        const rt = data.runtime || {};
+        const hasDetail = !!data.health_detail;
+        const startupCheck = data.startup_self_check || {};
+        const buildId = String(data.build_id || '').trim();
+        const turnProgress = (rt.turn_progress && typeof rt.turn_progress === 'object') ? rt.turn_progress : {};
+        const sourceLabel = rt.source ? ` [${rt.source}]` : '';
+        const statusTextEl = document.getElementById('status-text');
+        const progressWrap = document.getElementById('turn-progress-wrap');
+        const progressText = document.getElementById('turn-progress-text');
+        const progressRemain = document.getElementById('turn-progress-remaining');
+        const progressBar = document.getElementById('turn-progress-bar');
+        const buildLabel = buildId ? ` #${buildId}` : '';
+        if (startupCheck.ok === false) {
+          statusTextEl.textContent = `${startupCheck.message || '未连通酒馆'}${sourceLabel}${buildLabel}`;
+          const sev = String(startupCheck.severity || 'error');
+          if (sev === 'warn') {
+            statusTextEl.className = 'text-amber-300 font-medium tracking-wide';
+            if (statusTextEl.previousElementSibling) {
+              statusTextEl.previousElementSibling.classList.remove('bg-green-500', 'bg-red-500');
+              statusTextEl.previousElementSibling.classList.add('bg-amber-500');
+            }
+          } else {
+            statusTextEl.className = 'text-rose-400 font-medium tracking-wide';
+            if (statusTextEl.previousElementSibling) {
+              statusTextEl.previousElementSibling.classList.remove('bg-green-500', 'bg-amber-500');
+              statusTextEl.previousElementSibling.classList.add('bg-red-500');
+            }
+          }
+        } else {
+          statusTextEl.textContent = `引擎运行中${sourceLabel}${buildLabel}`;
+          statusTextEl.className = 'text-slate-300 font-medium tracking-wide';
+          if (statusTextEl.previousElementSibling) {
+            statusTextEl.previousElementSibling.classList.remove('bg-red-500', 'bg-amber-500');
+            statusTextEl.previousElementSibling.classList.add('bg-green-500');
+          }
+        }
+        const total = Number(turnProgress.total || 0);
+        const done = Number(turnProgress.done || 0);
+        const pending = Number(turnProgress.pending || 0);
+        const running = String(turnProgress.state || '') !== 'idle' && (total > 0 || pending > 0);
+        if (progressWrap && progressText && progressRemain && progressBar) {
+          if (running) {
+            progressWrap.classList.remove('hidden');
+            const pct = total > 0 ? Math.max(0, Math.min(100, (done / total) * 100)) : 0;
+            progressBar.style.width = `${pct.toFixed(0)}%`;
+            progressText.textContent = `后台推演中 ${done}/${total}`;
+            progressRemain.textContent = `剩余 ${pending} 角色`;
+          } else {
+            progressWrap.classList.add('hidden');
+            progressBar.style.width = '0%';
+          }
+        }
+        
+        // 更新会话列表
+        if (data.sessions) {
+          const sel = document.getElementById('session-selector');
+          sel.innerHTML = '';
+          const sids = Object.keys(data.sessions);
+          if (sids.length === 0) {
+            sel.innerHTML = '<option value="">暂无存档</option>';
+          } else {
+            sids.forEach(sid => {
+              const opt = document.createElement('option');
+              opt.value = sid;
+              const info = data.sessions[sid];
+              const chars = (info.active_characters || []).join('、');
+              const label = chars ? `${sid} (Tick:${info.tick} | ${chars})` : `${sid} (Tick:${info.tick} | ${info.agents_alive}人)`;
+              opt.textContent = label;
+              sel.appendChild(opt);
+            });
+            // 如果服务端返回了active_session_id并且我们没有强制选过别的
+            if (data.active_session_id && !selectedSession) {
+              selectedSession = data.active_session_id;
+            }
+            if (selectedSession && sids.includes(selectedSession)) {
+              sel.value = selectedSession;
+            } else {
+              sel.value = sids[0];
+              selectedSession = sids[0];
+            }
+            if (data.session_resolved_fallback && data.active_session_id && sids.includes(data.active_session_id)) {
+              selectedSession = data.active_session_id;
+              sel.value = data.active_session_id;
+            }
+          }
+        }
+        
+        // 优先使用后端持久化配置，避免 runtime 为空时面板显示“未配置”
+        const cfg = data.config || {};
+        currentConfig.base = cfg.llm_api_base ?? rt.llm_api_base ?? '';
+        currentConfig.key_masked = cfg.llm_api_key_masked ?? '';
+        currentConfig.admin_token = localStorage.getItem('omnis_admin_token') || '';
+        currentConfig.model = cfg.llm_model ?? rt.llm_model ?? '';
+        currentConfig.max_journal_limit = cfg.max_journal_limit ?? rt.max_journal_limit ?? 3;
+        currentConfig.dynamic_lore_writeback = cfg.dynamic_lore_writeback ?? rt.dynamic_lore_writeback ?? false;
+        currentConfig.turn_min_interval_sec = cfg.turn_min_interval_sec ?? 0.5;
+        currentConfig.active_location_freeze_turns = cfg.active_location_freeze_turns ?? 2;
+        currentConfig.location_lexicon = cfg.location_lexicon ?? [];
+        currentConfig.strict_background_independent = cfg.strict_background_independent ?? rt.strict_background_independent ?? true;
+        currentConfig.wait_for_turn_before_reply = cfg.wait_for_turn_before_reply ?? false;
+        currentConfig.wait_turn_timeout_sec = cfg.wait_turn_timeout_sec ?? 8;
+        currentConfig.wait_turn_scope = cfg.wait_turn_scope ?? 'related';
+        currentConfig.auto_wait_scope_downgrade = cfg.auto_wait_scope_downgrade ?? true;
+        currentConfig.rumor_default_ttl_ticks = cfg.rumor_default_ttl_ticks ?? rt.rumor_default_ttl_ticks ?? 48;
+        currentConfig.rumor_ttl_by_llm = cfg.rumor_ttl_by_llm ?? rt.rumor_ttl_by_llm ?? true;
+        currentConfig.tavern_user_dir = cfg.tavern_user_dir ?? '';
+        currentConfig.tavern_world_file = cfg.tavern_world_file ?? '';
+        updateLLMConfigSummary();
+        document.getElementById('tuning-turn-interval').textContent = `${currentConfig.turn_min_interval_sec ?? 0.5}s`;
+        document.getElementById('tuning-freeze-turns').textContent = String(currentConfig.active_location_freeze_turns ?? 2);
+        document.getElementById('tuning-lexicon-count').textContent = String((currentConfig.location_lexicon || []).length);
+        const audit = data.audit_summary || {};
+        document.getElementById('audit-total').textContent = String(audit.total || 0);
+        document.getElementById('audit-failures').textContent = String(audit.recent_failures || 0);
+        
+        document.getElementById('llm-model').textContent = currentConfig.model || '未配置';
+        document.getElementById('llm-model').title = currentConfig.base || '未配置';
+        
+        document.getElementById('tick-count').textContent = rt.tick || 0;
+        document.getElementById('digest-box').innerHTML = esc(rt.digest || '暂无显著变化').replace(/；/g, '<br>');
+        document.getElementById('rules-box').textContent = rt.world_rule_summary || '酒馆规则优先';
+        
+        if (rt.world_time) {
+          document.getElementById('world-time-text').textContent = rt.world_time;
+          document.getElementById('world-time-badge').classList.remove('hidden');
+        } else {
+          document.getElementById('world-time-badge').classList.add('hidden');
+        }
+        
+        // 更新坊间流言
+        const rumorsBox = document.getElementById('rumors-box');
+        const rumorTtlQuickInput = document.getElementById('rumor-ttl-quick');
+        const rumorTtlQuickUnit = document.getElementById('rumor-ttl-quick-unit');
+        const rumorTtlModeQuick = document.getElementById('rumor-ttl-mode-quick');
+        const quickUnit = (rumorTtlQuickUnit && rumorTtlQuickUnit.value) ? rumorTtlQuickUnit.value : 'tick';
+        if (rumorTtlQuickInput) {
+          const ticks = currentConfig.rumor_default_ttl_ticks ?? 48;
+          rumorTtlQuickInput.value = quickUnit === 'day' ? Math.max(1, Math.round((ticks / 24) * 10) / 10) : ticks;
+        }
+        if (rumorTtlModeQuick) rumorTtlModeQuick.checked = currentConfig.rumor_ttl_by_llm !== false;
+        const rumorMeta = rt.active_rumors_meta || [];
+        if (rumorMeta.length > 0) {
+          rumorsBox.innerHTML = rumorMeta.map(r => `<div class="pb-1 border-b border-slate-800 last:border-0">• ${esc(r.text || '')}<div class="text-[11px] text-slate-500">剩余 ${Number(r.remaining_ticks || 0)} tick</div></div>`).join('');
+        } else if (rt.active_rumors && rt.active_rumors.length > 0) {
+          rumorsBox.innerHTML = rt.active_rumors.map(r => `<div class="pb-1 border-b border-slate-800 last:border-0">• ${esc(r)}</div>`).join('');
+        } else {
+          rumorsBox.innerHTML = '<div class="text-slate-500 italic">天下太平，暂无流言</div>';
+        }
+        
+        // 更新魂穿状态展示
+        const possessedBadge = document.getElementById('possessed-badge');
+        const possessedName = document.getElementById('possessed-name');
+        if (rt.possessed_character) {
+          possessedName.textContent = rt.possessed_character;
+          possessedBadge.classList.remove('hidden');
+        } else {
+          possessedBadge.classList.add('hidden');
+        }
+
+        document.getElementById('agent-count').textContent = rt.agents || 0;
+        document.getElementById('inject-level').textContent = data.inject_default || 'full';
+        document.getElementById('cache-size').textContent = data.session_cache_size || 0;
+        
+        const guardStatus = hasDetail ? (rt.script_guard_enabled ? `Enabled (${rt.script_guard_action})` : 'Disabled') : 'N/A (公开视图)';
+        document.getElementById('script-guard').textContent = guardStatus;
+
+        const aer = rt.active_extract_report || {};
+        document.getElementById('dbg-active-input').textContent = (aer.active_input || []).join('、') || '-';
+        document.getElementById('dbg-active-resolved').textContent = (aer.resolved || []).join('、') || '-';
+        const srcMap = aer.source_map || {};
+        const srcLines = Object.keys(srcMap).map(k => `${k}: ${srcMap[k]}`);
+        document.getElementById('dbg-active-source').textContent = srcLines.length ? srcLines.join('\n') : '-';
+        document.getElementById('dbg-decision-reason').textContent = aer.decision_reason || '-';
+        const triggerReasons = aer.need_llm_reasons || [];
+        document.getElementById('dbg-need-llm-reasons').textContent = triggerReasons.length ? triggerReasons.join('\n') : '-';
+        document.getElementById('dbg-override-source').textContent = aer.override_source || '-';
+        const stateDiff = aer.state_diff || [];
+        document.getElementById('dbg-state-diff').textContent = stateDiff.length ? stateDiff.join('\n') : '-';
+        document.getElementById('dbg-queue-size').textContent = String(aer.queue_size || 0);
+        const freezeMap = aer.freeze_remaining || {};
+        const freezeLines = Object.keys(freezeMap).map(k => `${k}: ${freezeMap[k]}`);
+        document.getElementById('dbg-freeze-remaining').textContent = freezeLines.length ? freezeLines.join('\n') : '-';
+        const enq = rt.enqueue_report || {};
+        const enqReason = enq.reason ? `(${enq.reason})` : '';
+        document.getElementById('dbg-enqueue-status').textContent = enq.status ? `${enq.status}${enqReason}` : '-';
+        const recentLogs = rt.recent_extract_logs || [];
+        const recentText = recentLogs.map((row, idx) => {
+          const lines = [];
+          lines.push(`#${idx + 1} Tick ${row.tick ?? 0}`);
+          lines.push(`  reason: ${row.decision_reason || '-'}`);
+          lines.push(`  source: ${row.override_source || '-'}`);
+          const diff = row.state_diff || [];
+          lines.push(`  diff: ${diff.length ? diff.join(' | ') : '-'}`);
+          return lines.join('\n');
+        });
+        document.getElementById('dbg-recent-extract-logs').textContent = recentText.length ? recentText.join('\n\n') : '-';
+        const injections = rt.recent_injections || [];
+        const injText = injections.map((row, idx) => {
+          const lines = [];
+          lines.push(`#${idx + 1} Tick ${row.tick ?? 0} [${row.source || '-'}]`);
+          lines.push(`${row.content || '-'}`);
+          return lines.join('\n');
+        });
+        document.getElementById('dbg-recent-injections').textContent = injText.length ? injText.join('\n\n') : '-';
+        const perfLines = [];
+        perfLines.push(`elapsed_ms: ${Number(turnProgress.elapsed_ms || 0)}`);
+        perfLines.push(`llm_call_count: ${Number(turnProgress.llm_call_count || 0)}`);
+        perfLines.push(`dm_call_count: ${Number(turnProgress.dm_call_count || 0)}`);
+        perfLines.push(`dm_elapsed_ms: ${Number(turnProgress.dm_elapsed_ms || 0)}`);
+        perfLines.push(`slowest_actor: ${turnProgress.slowest_actor || '-'}`);
+        perfLines.push(`slowest_actor_ms: ${Number(turnProgress.slowest_actor_ms || 0)}`);
+        document.getElementById('dbg-turn-perf').textContent = perfLines.join('\n');
+        const dmRows = rt.recent_dm_adjudications || [];
+        const dmText = dmRows.map((row, idx) => {
+          const lines = [];
+          lines.push(`#${idx + 1} Tick ${row.tick ?? 0} @${row.target_loc || '-'}`);
+          lines.push(`group: ${(row.group_names || []).join('、') || '-'}`);
+          lines.push(`elapsed_ms: ${Number(row.elapsed_ms || 0)}`);
+          const ac = row.applied_changes || {};
+          lines.push(`applied: char=${ac.character_updates || 0}, status=${ac.status_changes || 0}, rel=${ac.relationship_changes || 0}, item=${ac.item_transfers || 0}, rumor=${ac.rumors_added || 0}, lore=${ac.new_lore_entry ? 1 : 0}`);
+          lines.push(`scenario: ${(row.scenario || '-').toString().slice(0, 500)}`);
+          lines.push(`raw: ${JSON.stringify(row.raw_response || {}).slice(0, 600)}`);
+          return lines.join('\n');
+        });
+        document.getElementById('dbg-recent-dm').textContent = dmText.length ? dmText.join('\n\n') : '-';
+        
+        const relBox = document.getElementById('relationships-box');
+        const itemsBox = document.getElementById('items-box');
+        const list = document.getElementById('agents-list');
+        if (!hasDetail) {
+          relBox.innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">公开视图：关系详情已隐藏</div>';
+          itemsBox.innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">公开视图：物品详情已隐藏</div>';
+          list.innerHTML = '<div class="text-slate-500 text-xs text-center py-8 italic">公开视图：角色详情已隐藏（配置 Admin Token 可查看）</div>';
+          globalAgentsData = [];
+        } else {
+          if (rt.relationships && rt.relationships.length > 0) {
+            let relHtml = '<div class="grid grid-cols-1 gap-2">';
+            rt.relationships.forEach(rel => {
+              const scoreColor = rel.score > 0 ? 'text-emerald-400' : 'text-rose-400';
+              const sign = rel.score > 0 ? '+' : '';
+              relHtml += `
+                <div class="flex items-center justify-between bg-slate-800/40 px-3 py-1.5 rounded text-sm border border-slate-700/50">
+                  <div class="flex items-center gap-2">
+                    <span class="text-blue-300">${esc(rel.source)}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    <span class="text-blue-300">${esc(rel.target)}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">${esc(rel.desc)}</span>
+                    <span class="${scoreColor} font-mono text-xs bg-slate-900/80 border border-slate-700 px-1.5 rounded">${sign}${rel.score}</span>
+                  </div>
+                </div>
+              `;
+            });
+            relHtml += '</div>';
+            relBox.innerHTML = relHtml;
+          } else {
+            relBox.innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">暂无显著关系变动</div>';
+          }
+          if (rt.items && rt.items.length > 0) {
+            let itemsHtml = '<div class="grid grid-cols-1 gap-2">';
+            rt.items.forEach(item => {
+              const locText = item.owner ? `<span class="text-emerald-400">👤 ${esc(item.owner)}</span>` : `<span class="text-amber-400">📍 ${esc(item.location)}</span>`;
+              itemsHtml += `
+                <div class="flex items-center justify-between bg-slate-800/40 px-3 py-1.5 rounded text-sm border border-slate-700/50">
+                  <div class="flex items-center gap-2 font-medium text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                    <span>${esc(item.name)}</span>
+                  </div>
+                  <div class="text-xs">${locText}</div>
+                </div>
+              `;
+            });
+            itemsHtml += '</div>';
+            itemsBox.innerHTML = itemsHtml;
+          } else {
+            itemsBox.innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">暂无物品流转记录</div>';
+          }
+          if (rt.agent_details && rt.agent_details.length > 0) {
+            globalAgentsData = rt.agent_details;
+            list.innerHTML = '';
+            const sortedAgents = [...rt.agent_details].sort((a, b) => (b.salience || 0) - (a.salience || 0));
+            sortedAgents.forEach(a => {
+              const card = document.createElement('div');
+              card.className = 'agent-card-wrap bg-slate-800/80 border border-slate-700 rounded-lg p-4 relative overflow-hidden cursor-pointer';
+              card.onclick = () => openCharDetails(a.name);
+              const saliencePercent = Math.min(100, (a.salience || 0) * 100);
+              const isDead = a.status === 'dead';
+              const isInjured = a.status === 'injured';
+              let statusBadge = '';
+              if (isDead) statusBadge = '<span class="text-[10px] bg-rose-900/60 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800/50">💀 死亡</span>';
+              else if (isInjured) statusBadge = '<span class="text-[10px] bg-amber-900/60 text-amber-300 px-1.5 py-0.5 rounded border border-amber-800/50">🩸 重伤</span>';
+              else statusBadge = '<span class="text-[10px] bg-emerald-900/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800/50">🟢 存活</span>';
+              const safeChar = encodeURIComponent(a.name || '');
+              const aiToggleBtn = `<button onclick="toggleAgentAI(decodeURIComponent('${safeChar}'), ${!a.ai_enabled}); event.stopPropagation();" class="text-[10px] px-2 py-0.5 rounded border transition-colors ${a.ai_enabled ? 'bg-blue-900/40 text-blue-300 border-blue-700/50 hover:bg-blue-800/60' : 'bg-slate-700 text-slate-400 border-slate-600 hover:bg-slate-600'}">🤖 AI:${a.ai_enabled ? 'ON' : 'OFF'}</button>`;
+              const possessBtn = `<button onclick="possessCharacter(decodeURIComponent('${safeChar}')); event.stopPropagation();" class="text-[10px] px-2 py-0.5 rounded border border-purple-700/50 bg-purple-900/40 text-purple-300 hover:bg-purple-800/60 transition-colors ml-1" title="魂穿扮演">👁️ 魂穿</button>`;
+              const lastJournal = (a.journal && a.journal.length > 0) ? a.journal[a.journal.length - 1] : '';
+              card.innerHTML = `<div class="flex justify-between items-start mb-3"><div><div class="font-bold text-slate-100 text-base flex items-center gap-2">${esc(a.name)}${statusBadge}</div><div class="text-xs text-slate-400 mt-1 flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>${esc(a.location)}</div></div><div class="flex flex-col items-end gap-1.5"><div class="text-xs font-mono bg-slate-900/80 px-1.5 py-0.5 rounded text-blue-300 shadow-inner border border-slate-700">W: ${(a.salience || 0).toFixed(2)}</div><div class="flex">${aiToggleBtn}${possessBtn}</div></div></div><div class="bg-slate-900/60 p-2.5 rounded border border-slate-700/50 min-h-[44px] flex flex-col justify-center relative group"><div class="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500/50 rounded-l"></div><div class="text-sm text-slate-300 font-medium pl-1">${esc(a.intent || '游荡')}</div></div><div class="mt-2 text-xs text-slate-400">${esc(a.summary || '')}</div><div class="mt-1 text-[11px] text-slate-500">${esc(lastJournal)}</div><div class="mt-3"><div class="flex justify-between text-[10px] text-slate-500 mb-1 font-mono tracking-wider"><span>SALIENCE / 显著度</span><span>${saliencePercent.toFixed(0)}%</span></div><div class="salience-bar"><div class="salience-fill" style="width: ${saliencePercent}%"></div></div></div>`;
+              list.appendChild(card);
+            });
+          } else {
+            list.innerHTML = '<div class="text-slate-500 text-xs text-center py-8 italic">暂无角色状态</div>';
+          }
+        }
+        
+        // 如果正在查看详情弹窗，同步更新内容
+        if (currentViewingChar && !document.getElementById('char-modal').classList.contains('hidden')) {
+          renderCharDetails(currentViewingChar);
+        }
+
+      } catch (err) {
+        console.error('获取状态失败', err);
+        const progressWrap = document.getElementById('turn-progress-wrap');
+        if (progressWrap) progressWrap.classList.add('hidden');
+        document.getElementById('status-text').textContent = '连接中断';
+        document.getElementById('status-text').className = 'text-red-400 font-medium tracking-wide';
+        if (document.getElementById('status-text').previousElementSibling) {
+          document.getElementById('status-text').previousElementSibling.classList.remove('bg-green-500');
+          document.getElementById('status-text').previousElementSibling.classList.add('bg-red-500');
+        }
+        document.getElementById('world-time-badge').classList.add('hidden');
+        document.getElementById('digest-box').textContent = '连接失败，等待重试';
+        document.getElementById('relationships-box').innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">离线状态</div>';
+        document.getElementById('items-box').innerHTML = '<div class="text-slate-500 text-xs text-center py-6 italic">离线状态</div>';
+        document.getElementById('agents-list').innerHTML = '<div class="text-slate-500 text-xs text-center py-8 italic">离线状态</div>';
+        globalAgentsData = [];
+      }
+    }
+
+    function openCharDetails(charName) {
+      currentViewingChar = charName;
+      document.getElementById('char-modal').classList.remove('hidden');
+      renderCharDetails(charName);
+    }
+
+    function closeCharModal() {
+      currentViewingChar = '';
+      document.getElementById('char-modal').classList.add('hidden');
+    }
+
+    function renderCharDetails(charName) {
+      const agent = globalAgentsData.find(a => a.name === charName);
+      if (!agent) return;
+
+      document.getElementById('char-modal-name').textContent = agent.name;
+      
+      const summaryEl = document.getElementById('char-modal-summary');
+      if (summaryEl) {
+        summaryEl.textContent = agent.summary || '暂无简介';
+      }
+      
+      const statusEl = document.getElementById('char-modal-status');
+      if (agent.status === 'dead') {
+        statusEl.textContent = '💀 已死亡';
+        statusEl.className = 'text-xs px-2 py-1 rounded bg-red-900 text-red-200';
+      } else if (agent.status === 'injured') {
+        statusEl.textContent = '🩸 重伤';
+        statusEl.className = 'text-xs px-2 py-1 rounded bg-orange-900 text-orange-200';
+      } else {
+        statusEl.textContent = '🟢 存活';
+        statusEl.className = 'text-xs px-2 py-1 rounded bg-green-900 text-green-200';
+      }
+
+      // 渲染日志
+      const journalBox = document.getElementById('char-modal-journal');
+      if (agent.journal && agent.journal.length > 0) {
+        journalBox.innerHTML = agent.journal.map(j => {
+          // 高亮 Tick 和 遭遇关键字
+          let text = esc(j).replace(/\[Tick \d+\]/g, match => `<span class="text-blue-400 font-bold">${match}</span>`);
+          text = text.replace(/\[Tick \d+ 遭遇\]/g, match => `<span class="text-purple-400 font-bold">${match}</span>`);
+          text = text.replace(/\[Tick \d+ 回合\]/g, match => `<span class="text-emerald-300 font-bold">${match}</span>`);
+          text = text.replace(/\[Tick \d+ 同步\]/g, match => `<span class="text-cyan-300 font-bold">${match}</span>`);
+          text = text.replace(/\[Tick \d+ 侧写\]/g, match => `<span class="text-amber-300 font-bold">${match}</span>`);
+          return `<div class="pb-2 border-b border-slate-800 last:border-0">${text}</div>`;
+        }).join('');
+        // 自动滚动到底部
+        journalBox.scrollTop = journalBox.scrollHeight;
+      } else {
+        journalBox.innerHTML = '<div class="text-slate-500 italic">暂无记忆记录</div>';
+      }
+
+      // 渲染物品
+      const itemsBox = document.getElementById('char-modal-items');
+      if (agent.items && agent.items.length > 0) {
+        itemsBox.innerHTML = `<ul class="list-disc pl-5 text-emerald-400 space-y-1">` + 
+          agent.items.map(i => `<li>${esc(i)}</li>`).join('') + `</ul>`;
+      } else {
+        itemsBox.innerHTML = '<div class="text-slate-500 italic">空空如也</div>';
+      }
+
+      // 渲染关系
+      const relsBox = document.getElementById('char-modal-rels');
+      if (agent.relationships && agent.relationships.length > 0) {
+        relsBox.innerHTML = agent.relationships.map(r => {
+          const scoreColor = r.score > 0 ? 'text-emerald-400' : 'text-rose-400';
+          const sign = r.score > 0 ? '+' : '';
+          const arrow = r.dir === 'out' ? `➡️ <span class="text-slate-300">${esc(r.target)}</span>` : `⬅️ <span class="text-slate-300">${esc(r.target)}</span>`;
+          
+          // 如果包含身份标签（通过逗号分隔），则提取高亮显示
+          let descText = r.desc;
+          let identityBadge = '';
+          if (descText.includes(',')) {
+            const parts = descText.split(',');
+            identityBadge = `<span class="bg-indigo-900 text-indigo-200 px-1.5 py-0.5 rounded mr-1">${esc(parts[0].trim())}</span>`;
+            descText = parts[1].trim();
+          }
+
+          return `
+            <div class="flex justify-between items-center bg-slate-800 px-2 py-1.5 rounded">
+              <div class="flex gap-2 items-center text-xs">
+                ${arrow}
+                <span class="text-slate-500">${identityBadge}(${esc(descText)})</span>
+              </div>
+              <span class="${scoreColor} font-mono text-xs bg-slate-900 px-1.5 rounded">${sign}${r.score}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        relsBox.innerHTML = '<div class="text-slate-500 italic text-center py-4">暂无复杂人际关系</div>';
+      }
+    }
+
+    function exportCharJournal() {
+      const agent = globalAgentsData.find(a => a.name === currentViewingChar);
+      if (!agent || !agent.journal || agent.journal.length === 0) {
+        notify("该角色暂无日志可导出", 'error');
+        return;
+      }
+
+      const content = `【${agent.name}】的记忆档案\n生成时间：${new Date().toLocaleString()}\n当前状态：${agent.status}\n当前地点：${agent.location}\n------------------------\n` 
+        + agent.journal.join('\n');
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Omnis_Journal_${agent.name}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function exportDebugBundle() {
+      if (!selectedSession) {
+        notify("请先选择一个存档 Session", 'error');
+        return;
+      }
+      const limit = parseInt(document.getElementById('debug-export-limit').value, 10) || 10;
+      try {
+        const res = await fetch('/admin/export_debug_bundle', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            session_id: selectedSession,
+            limit: limit
+          })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          notify('导出失败: ' + (data.error || '未知错误'), 'error');
+          return;
+        }
+        const content = JSON.stringify(data.bundle || {}, null, 2);
+        const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.filename || `omnis_debug_${selectedSession}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        notify('排障包导出成功', 'success');
+      } catch (e) {
+        notify('导出请求失败', 'error');
+      }
+    }
+
+    async function exportAuditEvents() {
+      const limit = parseInt(document.getElementById('debug-export-limit').value, 10) || 10;
+      try {
+        const res = await fetch('/admin/export_audit_events', {
+          method: 'POST',
+          headers: withAdminToken({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ limit: Math.max(20, limit * 20) })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          notify('审计导出失败: ' + (data.error || '未知错误'), 'error');
+          return;
+        }
+        const content = JSON.stringify(data.events || [], null, 2);
+        const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.filename || 'omnis_audit.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        notify('审计事件导出成功', 'success');
+      } catch (e) {
+        notify('审计导出请求失败', 'error');
+      }
+    }
+    
+    const rumorTtlSaveBtn = document.getElementById('rumor-ttl-save-btn');
+    if (rumorTtlSaveBtn) {
+      rumorTtlSaveBtn.addEventListener('click', saveRumorSettingsQuick);
+    }
+    const cfgRumorUnitEl = document.getElementById('rumor-default-ttl-unit');
+    const cfgRumorValueEl = document.getElementById('rumor-default-ttl-value');
+    if (cfgRumorUnitEl && cfgRumorValueEl) {
+      cfgRumorUnitEl.addEventListener('change', () => {
+        const value = Number(cfgRumorValueEl.value || 0);
+        if (!Number.isFinite(value) || value <= 0) return;
+        if (cfgRumorUnitEl.value === 'day') cfgRumorValueEl.value = Math.max(1, Math.round((value / 24) * 10) / 10);
+        else cfgRumorValueEl.value = Math.max(6, Math.round(value * 24));
+      });
+    }
+    const quickRumorUnitEl = document.getElementById('rumor-ttl-quick-unit');
+    const quickRumorValueEl = document.getElementById('rumor-ttl-quick');
+    if (quickRumorUnitEl && quickRumorValueEl) {
+      quickRumorUnitEl.addEventListener('change', () => {
+        const value = Number(quickRumorValueEl.value || 0);
+        if (!Number.isFinite(value) || value <= 0) return;
+        if (quickRumorUnitEl.value === 'day') quickRumorValueEl.value = Math.max(1, Math.round((value / 24) * 10) / 10);
+        else quickRumorValueEl.value = Math.max(6, Math.round(value * 24));
+      });
+    }
+    refreshData();
+    setInterval(refreshData, 3000);
+  </script>
+</body>
+</html>

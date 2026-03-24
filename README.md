@@ -1,5 +1,7 @@
 # Omnis（万象）
 
+[English README](./README_EN.md)
+
 SillyTavern 的后台世界增强代理。在你和角色聊天的同时，万象在幕后驱动整个世界运转——NPC 有自己的意图和行动，会互相交谈、争执、交易，世界时间在流逝，流言在传播，关系在变化。
 
 ## 它能做什么
@@ -215,4 +217,3 @@ http://127.0.0.1:5000/proxy/https://api.deepseek.com/v1（或其他链接）
 ## 许可
 
 MIT License
-
